@@ -1,0 +1,1646 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>单周期CPU的搭建 | Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="LOGISIM单周期CPU设计文档一、CPU设计方案综述总体设计要求 CPU处理器为32位单周期处理器。 CPU处理器处理器支持指令的集合：{add, sub, ori, lw, sw, beq, lui, nop} nop 为空指令，机器码 0x00000000，不进行任何有效行为（修改寄存器等）。 add, sub 按无符号加减法处理（不考虑溢出）。   需要采用模块化和层次化设计。 顶层有效">
+<meta property="og:type" content="article">
+<meta property="og:title" content="单周期CPU的搭建">
+<meta property="og:url" content="http://example.com/2025/11/02/%E5%8D%95%E5%91%A8%E6%9C%9FCPU%E7%9A%84%E6%90%AD%E5%BB%BA/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="LOGISIM单周期CPU设计文档一、CPU设计方案综述总体设计要求 CPU处理器为32位单周期处理器。 CPU处理器处理器支持指令的集合：{add, sub, ori, lw, sw, beq, lui, nop} nop 为空指令，机器码 0x00000000，不进行任何有效行为（修改寄存器等）。 add, sub 按无符号加减法处理（不考虑溢出）。   需要采用模块化和层次化设计。 顶层有效">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="f:/GRADE_2/CO/P3/CPU.jpg">
+<meta property="og:image" content="f:/GRADE_2/CO/P3/IFU.jpg">
+<meta property="og:image" content="f:/GRADE_2/CO/P3/GRF.jpg">
+<meta property="og:image" content="f:/GRADE_2/CO/P3/ALU.jpg">
+<meta property="og:image" content="f:/GRADE_2/CO/P3/DM.jpg">
+<meta property="og:image" content="f:/GRADE_2/CO/P3/EXT.jpg">
+<meta property="og:image" content="f:/GRADE_2/CO/P3/CTL.jpg">
+<meta property="og:image" content="f:/GRADE_2/CO/P3/%E6%B5%8B%E8%AF%951-1.jpg">
+<meta property="og:image" content="f:/GRADE_2/CO/P3/%E6%B5%8B%E8%AF%951-2.jpg">
+<meta property="og:image" content="f:/GRADE_2/CO/P3/%E6%B5%8B%E8%AF%951-3.jpg">
+<meta property="og:image" content="f:/GRADE_2/CO/P3/%E6%B5%8B%E8%AF%951-4.jpg">
+<meta property="og:image" content="f:/GRADE_2/CO/P3/%E6%B5%8B%E8%AF%952-1.jpg">
+<meta property="og:image" content="f:/GRADE_2/CO/P3/%E6%B5%8B%E8%AF%952-2.jpg">
+<meta property="og:image" content="f:/GRADE_2/CO/P3/%E6%B5%8B%E8%AF%952-3.jpg">
+<meta property="og:image" content="f:/GRADE_2/CO/P3/%E6%B5%8B%E8%AF%952-4.jpg">
+<meta property="article:published_time" content="2025-11-02T08:13:20.000Z">
+<meta property="article:modified_time" content="2025-11-02T08:17:45.372Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="f:/GRADE_2/CO/P3/CPU.jpg">
+  
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css">
+
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Hexo</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-单周期CPU的搭建" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/11/02/%E5%8D%95%E5%91%A8%E6%9C%9FCPU%E7%9A%84%E6%90%AD%E5%BB%BA/" class="article-date">
+  <time class="dt-published" datetime="2025-11-02T08:13:20.000Z" itemprop="datePublished">2025-11-02</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      单周期CPU的搭建
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h1 id="LOGISIM单周期CPU设计文档"><a href="#LOGISIM单周期CPU设计文档" class="headerlink" title="LOGISIM单周期CPU设计文档"></a>LOGISIM单周期CPU设计文档</h1><h2 id="一、CPU设计方案综述"><a href="#一、CPU设计方案综述" class="headerlink" title="一、CPU设计方案综述"></a>一、CPU设计方案综述</h2><h3 id="总体设计要求"><a href="#总体设计要求" class="headerlink" title="总体设计要求"></a>总体设计要求</h3><ul>
+<li>CPU处理器为32位单周期处理器。</li>
+<li>CPU处理器处理器支持指令的集合：{add, sub, ori, lw, sw, beq, lui, nop}<ul>
+<li>nop 为空指令，机器码 0x00000000，不进行任何有效行为（修改寄存器等）。</li>
+<li>add, sub 按无符号加减法处理（不考虑溢出）。</li>
+</ul>
+</li>
+<li>需要采用模块化和层次化设计。</li>
+<li>顶层有效的驱动信号要求包括且仅包括异步复位信号 reset（clk 请使用内置时钟模块）。</li>
+<li>顶层模块设计示意图<br> <img src="F:/GRADE_2/CO/P3/CPU.jpg" alt="本地图片" title="本地图片示例"></li>
+</ul>
+<h3 id="模块规格设计"><a href="#模块规格设计" class="headerlink" title="模块规格设计"></a>模块规格设计</h3><ul>
+<li>IFU（取指令单元）<ul>
+<li>设计要求：<ul>
+<li>内部包括 PC（程序计数器）、IM（指令存储器）及相关逻辑。</li>
+<li>PC 用寄存器实现，应具有异步复位功能，复位值为起始地址。</li>
+<li>起始地址：0x00003000。</li>
+<li>地址范围：0x00003000 ~ 0x00006FFF。</li>
+<li>IM 用 ROM 实现，容量为 4096 × 32bit。</li>
+<li>ROM 内部的起始地址是从 0 开始的，即 ROM 的 0 位置存储的是 PC 为0x00003000 的指令，每条指令是一个 32bit 常数。</li>
+<li>经过以上分析，不难发现 ROM 实际地址宽度仅需 12 位，请使用恰当的方法将 PC 中储存的地址同 IM 联系起来。</li>
+</ul>
+</li>
+<li>端口说明：<table>
+<thead>
+<tr>
+<th>序号</th>
+<th>信号名</th>
+<th>方向</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>clk</td>
+<td>I</td>
+<td>时钟信号</td>
+</tr>
+<tr>
+<td>2</td>
+<td>reset</td>
+<td>I</td>
+<td>异步复位信号,将PC值置为0x00003000 <br>0：无效<br>1：复位</td>
+</tr>
+<tr>
+<td>3</td>
+<td>LastPC[31:0]</td>
+<td>I</td>
+<td>寄存器中存储的PC值</td>
+</tr>
+<tr>
+<td>5</td>
+<td>PC[31:0]</td>
+<td>O</td>
+<td>beq</td>
+</tr>
+<tr>
+<td>6</td>
+<td>instr[31:0]</td>
+<td>O</td>
+<td>输出IM中即将执行的指令</td>
+</tr>
+</tbody></table>
+</li>
+<li>功能定义：<table>
+<thead>
+<tr>
+<th>序号</th>
+<th>功能</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>复位</td>
+<td>reset有效时，PC置为0x00003000</td>
+</tr>
+<tr>
+<td>2</td>
+<td>更新PC的值</td>
+<td>从寄存器中取出本周所需要的操作地址</td>
+</tr>
+<tr>
+<td>3</td>
+<td>输出指令</td>
+<td>根据PC的值，取出IM中即将执行的指令</td>
+</tr>
+</tbody></table>
+</li>
+<li>设计示意图：<br> <img src="F:/GRADE_2/CO/P3/IFU.jpg" alt="本地图片" title="本地图片示例"></li>
+</ul>
+</li>
+<li>GRF（通用寄存器组，寄存器文件，寄存器堆）<ul>
+<li>设计要求：<ul>
+<li>用具有写使能的寄存器实现，寄存器总数为 32 个，应具有异步复位功能。</li>
+<li>0 号寄存器的值始终保持为 0。其他寄存器初始值（复位后）均为 0，无需专门设置。</li>
+</ul>
+</li>
+<li>端口说明：<table>
+<thead>
+<tr>
+<th>序号</th>
+<th>信号名</th>
+<th>方向</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>clk</td>
+<td>I</td>
+<td>时钟信号</td>
+</tr>
+<tr>
+<td>2</td>
+<td>reset</td>
+<td>I</td>
+<td>异步复位信号，将32个寄存器中全部清零<br>1：清零<br>0：无效</td>
+</tr>
+<tr>
+<td>3</td>
+<td>WE</td>
+<td>I</td>
+<td>写使能信号<br>1:使能，可以写入数据<br>0:未使能，写入数据无效</td>
+</tr>
+<tr>
+<td>4</td>
+<td>A1[3:0]</td>
+<td>I</td>
+<td>5位地址输入信号，指定32个寄存器中的一个，将其中存储的数据读出到RD1</td>
+</tr>
+<tr>
+<td>5</td>
+<td>A2[3:0]</td>
+<td>I</td>
+<td>5位地址输入信号，指定32个寄存器中的一个，将其中存储的数据读出到RD2</td>
+</tr>
+<tr>
+<td>6</td>
+<td>A3[3:0]</td>
+<td>I</td>
+<td>5位地址输入信号，指定32个寄存器中的一个，作为RD的写入地址</td>
+</tr>
+<tr>
+<td>7</td>
+<td>WD[31:0]</td>
+<td>I</td>
+<td>32位写入数据</td>
+</tr>
+<tr>
+<td>8</td>
+<td>RD1[31:0]</td>
+<td>O</td>
+<td>输出A1对应的寄存器的32位数据</td>
+</tr>
+<tr>
+<td>9</td>
+<td>RD2[31:0]</td>
+<td>O</td>
+<td>输出A2对应的32位寄存器对应的数据</td>
+</tr>
+</tbody></table>
+</li>
+<li>功能定义：<table>
+<thead>
+<tr>
+<th>序号</th>
+<th>功能</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>异步复位</td>
+<td>reset&#x3D;1时，将32个寄存器全部清零</td>
+</tr>
+<tr>
+<td>2</td>
+<td>读数据</td>
+<td>将A1和A2地址对应的寄存器的值分别通过RD1和RD2读出</td>
+</tr>
+<tr>
+<td>3</td>
+<td>写数据</td>
+<td>当WE为1且时钟上升沿来临时，将WD写入到A3对应的寄存器内部</td>
+</tr>
+</tbody></table>
+</li>
+<li>设计示意图：<br> <img src="F:/GRADE_2/CO/P3/GRF.jpg" alt="本地图片" title="本地图片示例"></li>
+</ul>
+</li>
+<li>ALU (算术逻辑单元)<ul>
+<li>设计要求：<ul>
+<li>提供 32 位加、减、或运算及大小比较功能。</li>
+<li>加减法按无符号处理（不考虑溢出）。</li>
+</ul>
+</li>
+<li>端口说明：<table>
+<thead>
+<tr>
+<th>序号</th>
+<th>信号名</th>
+<th>方向</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>srcA[31:0]</td>
+<td>I</td>
+<td>参与运算的第一个数</td>
+</tr>
+<tr>
+<td>2</td>
+<td>srcB[32:0]</td>
+<td>I</td>
+<td>参与运算的第二个数</td>
+</tr>
+<tr>
+<td>3</td>
+<td>ALUop[2:0]</td>
+<td>I</td>
+<td>运算类型：<br>000:A+B<br>001:A-B<br>010:A&amp;B<br>011:A|B</td>
+</tr>
+<tr>
+<td>4</td>
+<td>COMPop</td>
+<td>I</td>
+<td>AB之间的比较大小的数据类型</td>
+</tr>
+<tr>
+<td>5</td>
+<td>shanmt</td>
+<td>I</td>
+<td>移位的位数</td>
+</tr>
+<tr>
+<td>6</td>
+<td>ALUresult[32:0]</td>
+<td>O</td>
+<td>输出运算结果</td>
+</tr>
+<tr>
+<td>7</td>
+<td>COMPresult</td>
+<td>O</td>
+<td>输出比较的结果</td>
+</tr>
+</tbody></table>
+</li>
+<li>功能定义：<table>
+<thead>
+<tr>
+<th>序号</th>
+<th>功能</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>+</td>
+<td>（不考虑溢出）无符号加法：A+B</td>
+</tr>
+<tr>
+<td>2</td>
+<td>-</td>
+<td>（不考虑溢出）无符号减法：A-B</td>
+</tr>
+<tr>
+<td>3</td>
+<td>&amp;</td>
+<td>按位与：A AND B</td>
+</tr>
+<tr>
+<td>4</td>
+<td>|</td>
+<td>按位或：A OR B</td>
+</tr>
+<tr>
+<td>5</td>
+<td>EQ</td>
+<td>比较AB大小是否相等</td>
+</tr>
+<tr>
+<td>6</td>
+<td>&gt;&gt;</td>
+<td>逻辑右移</td>
+</tr>
+<tr>
+<td>7</td>
+<td>&lt;&lt;</td>
+<td>逻辑左移</td>
+</tr>
+<tr>
+<td>8</td>
+<td>&gt;&gt;&gt;</td>
+<td>算数右移</td>
+</tr>
+</tbody></table>
+</li>
+<li>设计示意图：<br><img src="F:/GRADE_2/CO/P3/ALU.jpg" alt="本地图片"></li>
+</ul>
+</li>
+<li>DM （数据存储器）<ul>
+<li>设计要求：<ul>
+<li>使用 RAM 实现，容量为 3072 × 32bit，应具有异步复位功能，复位值为 0x00000000。</li>
+<li>起始地址：0x00000000。</li>
+<li>地址范围：0x00000000 ~ 0x00002FFF。</li>
+<li>RAM 应使用双端口模式，即设置 RAM 的 Data Interface 属性为 Separate load and store ports。</li>
+</ul>
+</li>
+<li>端口说明：<table>
+<thead>
+<tr>
+<th>序号</th>
+<th>信号名</th>
+<th>方向</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>clk</td>
+<td>I</td>
+<td>时钟信号</td>
+</tr>
+<tr>
+<td>2</td>
+<td>reset</td>
+<td>I</td>
+<td>异步复位信号<br>0：无效<br>1：内存值全部清零</td>
+</tr>
+<tr>
+<td>3</td>
+<td>MemWrite</td>
+<td>I</td>
+<td>写使能信号：<br>0：未使能，写入数据无效<br>1：使能，允许写入数据</td>
+</tr>
+<tr>
+<td>4</td>
+<td>MemAddr[4:0]</td>
+<td>I</td>
+<td>读取或写入信号地址</td>
+</tr>
+<tr>
+<td>5</td>
+<td>MemWD[31:0]</td>
+<td>I</td>
+<td>32位写入数据</td>
+</tr>
+<tr>
+<td>6</td>
+<td>MemReadData[31:0]</td>
+<td>O</td>
+<td>32位读入数据</td>
+</tr>
+</tbody></table>
+</li>
+<li>功能定义：<table>
+<thead>
+<tr>
+<th>序号</th>
+<th>功能</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>异步复位</td>
+<td>reset&#x3D;1时，DM中所有数据清零</td>
+</tr>
+<tr>
+<td>2</td>
+<td>写入数据</td>
+<td>当WE有效时，时钟上升沿来临时，WD中数据写入A对应的DM地址中</td>
+</tr>
+<tr>
+<td>3</td>
+<td>读出数据</td>
+<td>RD永远读出A对应的DM地址中的值</td>
+</tr>
+<tr>
+<td>4</td>
+<td>使能信号</td>
+<td>决定RD读出的内容是否有效：<br>0:无效<br>1:有效</td>
+</tr>
+</tbody></table>
+</li>
+<li>设计示意图：<br><img src="F:/GRADE_2/CO/P3/DM.jpg"></li>
+</ul>
+</li>
+<li>EXT （扩展单元）<ul>
+<li>设计要求：<ul>
+<li>可以使用 Logisim 内置的 Bit Extender。</li>
+</ul>
+</li>
+<li>端口说明：<table>
+<thead>
+<tr>
+<th>序号</th>
+<th>信号名</th>
+<th>方向</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>EXTin[15:0]</td>
+<td>I</td>
+<td>16位输入</td>
+</tr>
+<tr>
+<td>2</td>
+<td>EXTop[1:0]</td>
+<td>I</td>
+<td>决定拓展类型：<br>01:无符号拓展<br>00:有符号拓展<br>10:立即数逻辑左移16位</td>
+</tr>
+<tr>
+<td>3</td>
+<td>EXTout[31:0]</td>
+<td>O</td>
+<td>32位输出</td>
+</tr>
+</tbody></table>
+</li>
+<li>功能定义：<table>
+<thead>
+<tr>
+<th>序号</th>
+<th>功能</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>有符号拓展</td>
+<td>进行有符号拓展</td>
+</tr>
+<tr>
+<td>2</td>
+<td>无符号拓展</td>
+<td>进行无符号拓展</td>
+</tr>
+<tr>
+<td>3</td>
+<td>立即数逻辑左移</td>
+<td>进行逻辑左移16位（将立即数的低16位加载到高16位上）</td>
+</tr>
+</tbody></table>
+</li>
+<li>设计示意图:<br><img src="F:/GRADE_2/CO/P3/EXT.jpg"></li>
+</ul>
+</li>
+<li>Controller （控制器）<ul>
+<li><p>设计要求：</p>
+<ul>
+<li>使用与或门阵列构造控制信号的具体方法见后文叙述。</li>
+<li>也可以通过其它方式构造控制信号，同学们可以自行探索。</li>
+</ul>
+</li>
+<li><p>端口说明：</p>
+<table>
+<thead>
+<tr>
+<th>序号</th>
+<th>信号名</th>
+<th>方向</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>OP[5:0]</td>
+<td>I</td>
+<td>instr[31:26]:6位控制信号</td>
+</tr>
+<tr>
+<td>2</td>
+<td>FUNC[5:0]</td>
+<td>I</td>
+<td>instr[0:5]:6位控制信号</td>
+</tr>
+<tr>
+<td>3</td>
+<td>RegWrite</td>
+<td>O</td>
+<td>寄存器组GRF写入数据使能信号</td>
+</tr>
+<tr>
+<td>4</td>
+<td>RegDst[1:0]</td>
+<td>O</td>
+<td>选择寄存器组GRF的写入地址</td>
+</tr>
+<tr>
+<td>5</td>
+<td>EXTop[1:0]</td>
+<td>O</td>
+<td>选择16位立即数扩展为32位立即数的方式</td>
+</tr>
+<tr>
+<td>6</td>
+<td>NPCop[1:0]</td>
+<td>O</td>
+<td>选择NPC中下一个跳转地址的计算方式</td>
+</tr>
+<tr>
+<td>7</td>
+<td>ALUsrc</td>
+<td>O</td>
+<td>选择ALU计算模块中第二个输入B</td>
+</tr>
+<tr>
+<td>8</td>
+<td>ALUop[2:0]</td>
+<td>O</td>
+<td>选择ALU模块的计算方式</td>
+</tr>
+<tr>
+<td>9</td>
+<td>COMPop[2:0]</td>
+<td>O</td>
+<td>选择COMP模块中的比较方式</td>
+</tr>
+<tr>
+<td>10</td>
+<td>MemWrite</td>
+<td>O</td>
+<td>DM模块中写入数据的使能信号</td>
+</tr>
+<tr>
+<td>11</td>
+<td>DatatoReg[2:0]</td>
+<td>O</td>
+<td>选择GRF模块32位写入数据</td>
+</tr>
+</tbody></table>
+</li>
+<li><p>端口功能定义：</p>
+<table>
+<thead>
+<tr>
+<th>序号</th>
+<th>功能</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>RegWrite</td>
+<td>GRF写入使能信号<br>0:GRF不写入数据<br>1:GRF写入数据</td>
+</tr>
+<tr>
+<td>2</td>
+<td>RegDst[1:0]</td>
+<td>选择写入数据的地址</td>
+</tr>
+<tr>
+<td>3</td>
+<td>EXTop[1:0]</td>
+<td>选择16位立即数拓展方式</td>
+</tr>
+<tr>
+<td>4</td>
+<td>NPCop[1:0]</td>
+<td>选择NPC计算方式</td>
+</tr>
+<tr>
+<td>5</td>
+<td>ALUsrc</td>
+<td>选择ALU的第二个输入</td>
+</tr>
+<tr>
+<td>6</td>
+<td>ALUop[2:0]</td>
+<td>选择计算模式<br>000：A+B<br>001:A-B<br>010:A|B<br>011:A&amp;B<br>100:B&gt;&gt;C<br>101:B&lt;&lt;C<br>110:B&gt;&gt;&gt;C</td>
+</tr>
+<tr>
+<td>7</td>
+<td>COMPop[2:0]</td>
+<td>比较AB的方式000:A&#x3D;&#x3D;B<br>001:A&lt;B(signed)<br>010:A&gt;B(signed)<br>011:A&lt;B(unsigned)<br>100A&gt;B(unsigned):<br>101:!!&#x3D;B</td>
+</tr>
+<tr>
+<td>8</td>
+<td>MemWrite</td>
+<td>0:无法写入数据<br>1:可以写入数据</td>
+</tr>
+<tr>
+<td>9</td>
+<td>DatatoReg[2:0]</td>
+<td>000:RegData &#x3D; MemAddr<br>001:RegData &#x3D; MemReadData<br>010:RegData &#x3D; COMPresult<br>011:RegData &#x3D; PC+4</td>
+</tr>
+</tbody></table>
+</li>
+<li><p>AND模块功能定义：</p>
+<table>
+<thead>
+<tr>
+<th>序号</th>
+<th>FUNC</th>
+<th>OP</th>
+<th>操作类型</th>
+<th>操作指令</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>001101</td>
+<td></td>
+<td>I</td>
+<td>ori</td>
+</tr>
+<tr>
+<td>2</td>
+<td>101011</td>
+<td></td>
+<td>I</td>
+<td>sw</td>
+</tr>
+<tr>
+<td>3</td>
+<td>100011</td>
+<td></td>
+<td>I</td>
+<td>lw</td>
+</tr>
+<tr>
+<td>4</td>
+<td>001111</td>
+<td></td>
+<td>I</td>
+<td>lui</td>
+</tr>
+<tr>
+<td>5</td>
+<td>000100</td>
+<td></td>
+<td>I</td>
+<td>beq</td>
+</tr>
+<tr>
+<td>6</td>
+<td>000010</td>
+<td></td>
+<td>I</td>
+<td>j</td>
+</tr>
+<tr>
+<td>7</td>
+<td>001000</td>
+<td></td>
+<td>I</td>
+<td>addi</td>
+</tr>
+<tr>
+<td>8</td>
+<td>000101</td>
+<td></td>
+<td>I</td>
+<td>bne</td>
+</tr>
+<tr>
+<td>9</td>
+<td>000011</td>
+<td></td>
+<td>I</td>
+<td>jal</td>
+</tr>
+<tr>
+<td>10</td>
+<td>000000</td>
+<td>100000</td>
+<td>R</td>
+<td>add</td>
+</tr>
+<tr>
+<td>11</td>
+<td>000000</td>
+<td>100010</td>
+<td>R</td>
+<td>sub</td>
+</tr>
+<tr>
+<td>12</td>
+<td>000000</td>
+<td>101010</td>
+<td>R</td>
+<td>slt</td>
+</tr>
+<tr>
+<td>13</td>
+<td>000000</td>
+<td>000000</td>
+<td>R</td>
+<td>sll</td>
+</tr>
+<tr>
+<td>14</td>
+<td>000000</td>
+<td>001000</td>
+<td>R</td>
+<td>jr</td>
+</tr>
+</tbody></table>
+</li>
+<li><p>OR模块功能定义：</p>
+<table>
+<thead>
+<tr>
+<th>序号</th>
+<th>操作指令</th>
+<th>RegWrite</th>
+<th>RegDst</th>
+<th>EXTop</th>
+<th>NPCop</th>
+<th>ALUsrc</th>
+<th>ALUop</th>
+<th>COMPop</th>
+<th>MemWrite</th>
+<th>DatatoReg</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>ori</td>
+<td>1</td>
+<td>01</td>
+<td>01</td>
+<td>00</td>
+<td>1</td>
+<td>010</td>
+<td>000</td>
+<td>0</td>
+<td>000</td>
+</tr>
+<tr>
+<td>2</td>
+<td>add</td>
+<td>1</td>
+<td>00</td>
+<td>00</td>
+<td>00</td>
+<td>0</td>
+<td>000</td>
+<td>000</td>
+<td>0</td>
+<td>000</td>
+</tr>
+<tr>
+<td>3</td>
+<td>addu</td>
+<td>1</td>
+<td>00</td>
+<td>01</td>
+<td>00</td>
+<td>0</td>
+<td>000</td>
+<td>000</td>
+<td>0</td>
+<td>000</td>
+</tr>
+<tr>
+<td>4</td>
+<td>lw</td>
+<td>1</td>
+<td>1</td>
+<td>00</td>
+<td>00</td>
+<td>1</td>
+<td>000</td>
+<td>000</td>
+<td>0</td>
+<td>001</td>
+</tr>
+<tr>
+<td>5</td>
+<td>sw</td>
+<td>0</td>
+<td>00</td>
+<td>00</td>
+<td>00</td>
+<td>1</td>
+<td>000</td>
+<td>000</td>
+<td>1</td>
+<td>001</td>
+</tr>
+<tr>
+<td>6</td>
+<td>sub</td>
+<td>1</td>
+<td>00</td>
+<td>00</td>
+<td>00</td>
+<td>0</td>
+<td>001</td>
+<td>000</td>
+<td>0</td>
+<td>000</td>
+</tr>
+<tr>
+<td>7</td>
+<td>beq</td>
+<td>0</td>
+<td>00</td>
+<td>00</td>
+<td>01</td>
+<td>0</td>
+<td>000</td>
+<td>000</td>
+<td>0</td>
+<td>000</td>
+</tr>
+<tr>
+<td>8</td>
+<td>lui</td>
+<td>1</td>
+<td>01</td>
+<td>10</td>
+<td>00</td>
+<td>1</td>
+<td>000</td>
+<td>000</td>
+<td>0</td>
+<td>000</td>
+</tr>
+<tr>
+<td>9</td>
+<td>j</td>
+<td>0</td>
+<td>00</td>
+<td>00</td>
+<td>10</td>
+<td>0</td>
+<td>000</td>
+<td>000</td>
+<td>0</td>
+<td>000</td>
+</tr>
+<tr>
+<td>10</td>
+<td>addi</td>
+<td>1</td>
+<td>01</td>
+<td>00</td>
+<td>00</td>
+<td>1</td>
+<td>000</td>
+<td>000</td>
+<td>0</td>
+<td>000</td>
+</tr>
+<tr>
+<td>11</td>
+<td>bne</td>
+<td>0</td>
+<td>00</td>
+<td>00</td>
+<td>01</td>
+<td>0</td>
+<td>000</td>
+<td>101</td>
+<td>0</td>
+<td>000</td>
+</tr>
+<tr>
+<td>12</td>
+<td>slt</td>
+<td>1</td>
+<td>00</td>
+<td>00</td>
+<td>00</td>
+<td>0</td>
+<td>000</td>
+<td>001</td>
+<td>0</td>
+<td>010</td>
+</tr>
+<tr>
+<td>13</td>
+<td>sll</td>
+<td>1</td>
+<td>00</td>
+<td>00</td>
+<td>00</td>
+<td>0</td>
+<td>101</td>
+<td>000</td>
+<td>0</td>
+<td>000</td>
+</tr>
+<tr>
+<td>14</td>
+<td>jal</td>
+<td>1</td>
+<td>10</td>
+<td>00</td>
+<td>10</td>
+<td>0</td>
+<td>000</td>
+<td>000</td>
+<td>0</td>
+<td>010</td>
+</tr>
+<tr>
+<td>15</td>
+<td>jr</td>
+<td>0</td>
+<td>00</td>
+<td>00</td>
+<td>11</td>
+<td>0</td>
+<td>000</td>
+<td>000</td>
+<td>0</td>
+<td>000</td>
+</tr>
+</tbody></table>
+</li>
+<li><p>设计示意图：<br><img src="F:/GRADE_2/CO/P3/CTL.jpg"></p>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="二、功能测试"><a href="#二、功能测试" class="headerlink" title="二、功能测试"></a>二、功能测试</h2><h3 id="MARS测试代码1"><a href="#MARS测试代码1" class="headerlink" title="MARS测试代码1"></a><strong>MARS</strong>测试代码1</h3><pre><code>.text
+  ori		$t1, $v0, 100	# t1: 100
+  ori		$t2, $v0, 250	# t2: 250
+  ori		$t3, $v0, 200 	# t3: 200
+  addu		$t4, $t1, $t3	
+  # t4 = t1 + t3 (t4 = 300)
+  subu		$t5, $t4, $t2	
+  # t5 = t4 - t2 (t5 = 50)
+  sw		$t5, 4($v0)
+  lw		$t6, 4($v0)
+</code></pre>
+<h3 id="MARS测试代码2"><a href="#MARS测试代码2" class="headerlink" title="MARS测试代码2"></a><strong>MARS</strong>测试代码2</h3><pre><code>.text
+main:
+  ori   $gp, $zero, 0
+  ori   $sp, $zero, 0
+  ori   $at, $zero, 0x3456
+  add   $at, $at, $at
+  lw    $at, 4($zero)
+  sw    $at, 4($zero)
+  lui   $v0, 0x7878
+  sub   $v1, $v0, $at
+  lui   $a1, 0x1234
+  ori   $a0, $zero, 5
+  nop
+  sw    $a1, -1($a0)
+  lw    $v1, -1($a0)
+  beq   $v1, $a1, skip
+  beq   $zero, $zero, L1
+skip:
+    ori   $a3, $v1, 0x404
+    beq   $a3, $v1, L2
+    nop
+    lui   $t0, 0x7777
+    ori   $t0, $t0, 0xffff
+    sub   $zero, $zero, $t0
+    ori   $zero, $zero, 0x1100
+    add   $t2, $a3, $a2
+    ori   $t0, $zero, 0
+    ori   $t1, $zero, 1
+    ori   $t2, $zero, 1
+loop:
+    add   $t0, $t0, $t2
+    beq   $t0, $t1, loop
+    beq   $zero, $zero, loop   
+</code></pre>
+<h3 id="MARS测试效果展示1"><a href="#MARS测试效果展示1" class="headerlink" title="MARS测试效果展示1"></a><strong>MARS</strong>测试效果展示1</h3><ul>
+<li><p>翻译为16进制机器语言：</p>
+<table>
+<thead>
+<tr>
+<th>汇编指令</th>
+<th>二进制编码说明</th>
+<th>十六进制机器码</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>ori $t1, $v0, 100</code></td>
+<td>opcode&#x3D;0x0D, rs&#x3D;2, rt&#x3D;9, imm&#x3D;0x0064</td>
+<td><code>34490064</code></td>
+</tr>
+<tr>
+<td><code>ori $t2, $v0, 250</code></td>
+<td>opcode&#x3D;0x0D, rs&#x3D;2, rt&#x3D;10, imm&#x3D;0x00FA</td>
+<td><code>344A00FA</code></td>
+</tr>
+<tr>
+<td><code>ori $t3, $v0, 200</code></td>
+<td>opcode&#x3D;0x0D, rs&#x3D;2, rt&#x3D;11, imm&#x3D;0x00C8</td>
+<td><code>344B00C8</code></td>
+</tr>
+<tr>
+<td><code>addu $t4, $t1, $t3</code></td>
+<td>funct&#x3D;0x21</td>
+<td><code>012B6021</code></td>
+</tr>
+<tr>
+<td><code>subu $t5, $t4, $t2</code></td>
+<td>funct&#x3D;0x23</td>
+<td><code>018A6823</code></td>
+</tr>
+<tr>
+<td><code>sw $t5, 4($v0)</code></td>
+<td>opcode&#x3D;0x2B, base&#x3D;$v0(2), rt&#x3D;$t5(13), offset&#x3D;0x0004</td>
+<td><code>AC4D0004</code></td>
+</tr>
+<tr>
+<td><code>lw $t6, 4($v0)</code></td>
+<td>opcode&#x3D;0x23, base&#x3D;$v0(2), rt&#x3D;$t6(14), offset&#x3D;0x0004</td>
+<td><code>8C4E0004</code></td>
+</tr>
+</tbody></table>
+<pre><code class="python：">
+34490064
+344A00FA
+344B00C8
+012B6021
+018A6823
+AC4D0004
+8C4E0004
+</code></pre>
+</li>
+<li><p>MARS中的运行结果：<br><br><br><img src="F:/GRADE_2/CO/P3/测试1-1.jpg" alt="本地图片" title="本地图片示例"><br><br><br><img src="F:/GRADE_2/CO/P3/测试1-2.jpg" alt="本地图片" title="本地图片示例"></p>
+</li>
+<li><p>LOGISIM中DM数据导出和GRF最终数据<br><br><br><img src="F:/GRADE_2/CO/P3/测试1-3.jpg" alt="本地图片" title="本地图片示例"><br><br><br><img src="F:/GRADE_2/CO/P3/测试1-4.jpg" alt="本地图片" title="本地图片示例"></p>
+</li>
+</ul>
+<h3 id="MARS测试效果展示2"><a href="#MARS测试效果展示2" class="headerlink" title="MARS测试效果展示2"></a><strong>MARS</strong>测试效果展示2</h3><ul>
+<li><p>翻译为16进制机器语言：</p>
+<table>
+<thead>
+<tr>
+<th>地址</th>
+<th>机器码</th>
+<th>汇编指令</th>
+<th>说明</th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0x00</td>
+<td><code>341c0000</code></td>
+<td><code>ori $gp, $zero, 0</code></td>
+<td>将 <code>$gp</code> ($28) 置为 0</td>
+<td></td>
+</tr>
+<tr>
+<td>0x04</td>
+<td><code>341d0000</code></td>
+<td><code>ori $sp, $zero, 0</code></td>
+<td>将 <code>$sp</code> ($29) 置为 0</td>
+<td></td>
+</tr>
+<tr>
+<td>0x08</td>
+<td><code>34013456</code></td>
+<td><code>ori $at, $zero, 0x3456</code></td>
+<td>$at &#x3D; 0x3456</td>
+<td></td>
+</tr>
+<tr>
+<td>0x0C</td>
+<td><code>00210820</code></td>
+<td><code>add $at, $at, $at</code></td>
+<td>$at &#x3D; $at + $at（其实是 $at+$at&#x3D;2*$at）</td>
+<td></td>
+</tr>
+<tr>
+<td>0x10</td>
+<td><code>8c010004</code></td>
+<td><code>lw $at, 4($zero)</code></td>
+<td>从内存地址 4 取字到 $at</td>
+<td></td>
+</tr>
+<tr>
+<td>0x14</td>
+<td><code>ac010004</code></td>
+<td><code>sw $at, 4($zero)</code></td>
+<td>将 $at 存入内存地址 4</td>
+<td></td>
+</tr>
+<tr>
+<td>0x18</td>
+<td><code>3c027878</code></td>
+<td><code>lui $v0, 0x7878</code></td>
+<td>$v0 &#x3D; 0x78780000</td>
+<td></td>
+</tr>
+<tr>
+<td>0x1C</td>
+<td><code>00411822</code></td>
+<td><code>sub $v1, $v0, $at</code></td>
+<td>$v1 &#x3D; $v0 - $at</td>
+<td></td>
+</tr>
+<tr>
+<td>0x20</td>
+<td><code>3c051234</code></td>
+<td><code>lui $a1, 0x1234</code></td>
+<td>$a1 &#x3D; 0x12340000</td>
+<td></td>
+</tr>
+<tr>
+<td>0x24</td>
+<td><code>34040005</code></td>
+<td><code>ori $a0, $zero, 5</code></td>
+<td>$a0 &#x3D; 5</td>
+<td></td>
+</tr>
+<tr>
+<td>0x28</td>
+<td><code>00000000</code></td>
+<td><code>nop</code></td>
+<td>空操作</td>
+<td></td>
+</tr>
+<tr>
+<td>0x2C</td>
+<td><code>ac85ffff</code></td>
+<td><code>sw $a1, -1($a0)</code></td>
+<td>存储 a1 到地址 $a0-1</td>
+<td></td>
+</tr>
+<tr>
+<td>0x30</td>
+<td><code>8c83ffff</code></td>
+<td><code>lw $v1, -1($a0)</code></td>
+<td>从地址 $a0-1 加载字到 $v1</td>
+<td></td>
+</tr>
+<tr>
+<td>0x34</td>
+<td><code>10650001</code></td>
+<td><code>beq $v1, $a1, 1</code></td>
+<td>若 v1&#x3D;&#x3D;a1 则跳转到 +1 指令（延迟槽后）</td>
+<td></td>
+</tr>
+<tr>
+<td>0x38</td>
+<td><code>1000000d</code></td>
+<td><code>beq $zero, $zero, 13</code></td>
+<td>无条件跳转到后面13条指令之后</td>
+<td></td>
+</tr>
+<tr>
+<td>0x3C</td>
+<td><code>34670404</code></td>
+<td><code>ori $a3, $v1, 0x404</code></td>
+<td>$a3 &#x3D; $v1</td>
+<td>0x404</td>
+</tr>
+<tr>
+<td>0x40</td>
+<td><code>10e3000b</code></td>
+<td><code>beq $a3, $v1, 11</code></td>
+<td>若 a3&#x3D;&#x3D;v1 跳转</td>
+<td></td>
+</tr>
+<tr>
+<td>0x44</td>
+<td><code>00000000</code></td>
+<td><code>nop</code></td>
+<td>延迟槽</td>
+<td></td>
+</tr>
+<tr>
+<td>0x48</td>
+<td><code>3c087777</code></td>
+<td><code>lui $t0, 0x7777</code></td>
+<td>$t0 &#x3D; 0x77770000</td>
+<td></td>
+</tr>
+<tr>
+<td>0x4C</td>
+<td><code>3508ffff</code></td>
+<td><code>ori $t0, $t0, 0xffff</code></td>
+<td>$t0 &#x3D; 0x7777FFFF</td>
+<td></td>
+</tr>
+<tr>
+<td>0x50</td>
+<td><code>00080022</code></td>
+<td><code>sub $zero, $zero, $t0</code></td>
+<td>$zero 无变化，但合法指令</td>
+<td></td>
+</tr>
+<tr>
+<td>0x54</td>
+<td><code>34001100</code></td>
+<td><code>ori $zero, $zero, 0x1100</code></td>
+<td>无效果（写入 $zero）</td>
+<td></td>
+</tr>
+<tr>
+<td>0x58</td>
+<td><code>00e65020</code></td>
+<td><code>add $t2, $a3, $a2</code></td>
+<td>$t2 &#x3D; $a3 + $a2</td>
+<td></td>
+</tr>
+<tr>
+<td>0x5C</td>
+<td><code>34080000</code></td>
+<td><code>ori $t0, $zero, 0</code></td>
+<td>$t0 &#x3D; 0</td>
+<td></td>
+</tr>
+<tr>
+<td>0x60</td>
+<td><code>34090001</code></td>
+<td><code>ori $t1, $zero, 1</code></td>
+<td>$t1 &#x3D; 1</td>
+<td></td>
+</tr>
+<tr>
+<td>0x64</td>
+<td><code>340a0001</code></td>
+<td><code>ori $t2, $zero, 1</code></td>
+<td>$t2 &#x3D; 1</td>
+<td></td>
+</tr>
+<tr>
+<td>0x68</td>
+<td><code>010a4020</code></td>
+<td><code>add $t0, $t0, $t2</code></td>
+<td>$t0 +&#x3D; $t2</td>
+<td></td>
+</tr>
+<tr>
+<td>0x6C</td>
+<td><code>1109fffe</code></td>
+<td><code>beq $t0, $t1, -2</code></td>
+<td>若 t0&#x3D;&#x3D;t1，则回跳两条指令（死循环）</td>
+<td></td>
+</tr>
+<tr>
+<td>0x70</td>
+<td><code>1000ffff</code></td>
+<td><code>beq $zero, $zero, -1</code></td>
+<td>无限循环</td>
+<td></td>
+</tr>
+</tbody></table>
+<pre><code class="python:">341d0000 
+34013456 
+00210820 
+8c010004 
+ac010004 
+3c027878 
+00411822 
+3c051234 
+34040005 
+00000000 
+ac85ffff 
+8c83ffff 
+10650001 
+1000000d 
+34670404 
+10e3000b 
+00000000 
+3c087777 
+3508ffff 
+00080022 
+34001100 
+00e65020 
+34080000 
+34090001 
+340a0001 
+010a4020 
+1109fffe 
+1000ffff  
+</code></pre>
+</li>
+<li><p>MARS中的运行结果：<br><br><br><img src="F:/GRADE_2/CO/P3/测试2-1.jpg" alt="本地图片" title="本地图片示例"><br><br><br><img src="F:/GRADE_2/CO/P3/测试2-2.jpg" alt="本地图片" title="本地图片示例"></p>
+</li>
+<li><p>LOGISIM中DM数据导出和GRF最终数据<br><br><br><img src="F:/GRADE_2/CO/P3/测试2-3.jpg" alt="本地图片" title="本地图片示例"><br><br><br><img src="F:/GRADE_2/CO/P3/测试2-4.jpg" alt="本地图片" title="本地图片示例"></p>
+</li>
+</ul>
+<h2 id="三、思考题解答"><a href="#三、思考题解答" class="headerlink" title="三、思考题解答"></a>三、思考题解答</h2><h3 id="1-上面我们介绍了通过-FSM-理解单周期-CPU-的基本方法。请大家指出单周期-CPU-所用到的模块中，哪些发挥状态存储功能，哪些发挥状态转移功能。"><a href="#1-上面我们介绍了通过-FSM-理解单周期-CPU-的基本方法。请大家指出单周期-CPU-所用到的模块中，哪些发挥状态存储功能，哪些发挥状态转移功能。" class="headerlink" title="1.上面我们介绍了通过 FSM 理解单周期 CPU 的基本方法。请大家指出单周期 CPU 所用到的模块中，哪些发挥状态存储功能，哪些发挥状态转移功能。"></a>1.<em>上面我们介绍了通过 FSM 理解单周期 CPU 的基本方法。请大家指出单周期 CPU 所用到的模块中，哪些发挥状态存储功能，哪些发挥状态转移功能。</em></h3><ul>
+<li><p>状态存储模块：PC、GRF、DM、IM 等具有记忆功能的模块</p>
+</li>
+<li><p>状态转移模块：CONTROLLER、ALU、MUX、Sign-Extend 等组合逻辑部分</p>
+</li>
+<li><p>在这里的main部分是一个综合的顶层设计，没有考虑</p>
+</li>
+</ul>
+<h3 id="2-现在我们的模块中-IM-使用-ROM，DM-使用-RAM，GRF-使用-Register，这种做法合理吗？-请给出分析，若有改进意见也请一并给出。"><a href="#2-现在我们的模块中-IM-使用-ROM，DM-使用-RAM，GRF-使用-Register，这种做法合理吗？-请给出分析，若有改进意见也请一并给出。" class="headerlink" title="2.现在我们的模块中 IM 使用 ROM，DM 使用 RAM，GRF 使用 Register，这种做法合理吗？ 请给出分析，若有改进意见也请一并给出。"></a>2.<em>现在我们的模块中 IM 使用 ROM，DM 使用 RAM，GRF 使用 Register，这种做法合理吗？ 请给出分析，若有改进意见也请一并给出。</em></h3><ul>
+<li>合理。</li>
+<li>IM只需被读取，ROM只有读取功能；</li>
+<li>DM既要进行读取，又要进行写入，但是一个周期只会进行读取和写入之一，RAM的单一地址和各一个的读写端口满足了这种要求，</li>
+<li>GRF需要读写，且其与ALU直接连接，需要高速地读写，故使用寄存器堆搭建合理。</li>
+</ul>
+<h3 id="3-在上述提示的模块之外，你是否在实际实现时设计了其他的模块？如果是的话，请给出介绍和设计的思路。"><a href="#3-在上述提示的模块之外，你是否在实际实现时设计了其他的模块？如果是的话，请给出介绍和设计的思路。" class="headerlink" title="3.在上述提示的模块之外，你是否在实际实现时设计了其他的模块？如果是的话，请给出介绍和设计的思路。"></a>3.<em>在上述提示的模块之外，你是否在实际实现时设计了其他的模块？如果是的话，请给出介绍和设计的思路。</em></h3><ul>
+<li>并没有涉及新的模块，不过我增加了一些指令可以使得该单周期CPU的工作更加全面，同时对真值表进行了自己的改进，减少了Controller中逻辑判断的复杂度。</li>
+</ul>
+<h3 id="4-事实上，实现-nop-空指令，我们并不需要将它加入控制信号真值表，为什么？"><a href="#4-事实上，实现-nop-空指令，我们并不需要将它加入控制信号真值表，为什么？" class="headerlink" title="4.事实上，实现 nop 空指令，我们并不需要将它加入控制信号真值表，为什么？"></a>4.<em>事实上，实现 nop 空指令，我们并不需要将它加入控制信号真值表，为什么？</em></h3><ul>
+<li>nop指令，整个CPU只执行PC&lt;&#x3D;PC+4指令，一段指令中，加与不加，执行结果没有区别。</li>
+</ul>
+<h3 id="5-阅读-Pre-的“MIPS-指令集及汇编语言”一节中给出的测试样例，评价其强度（可从各个指令的覆盖情况，单一指令各种行为的覆盖情况等方面分析），并指出具体的不足之处。"><a href="#5-阅读-Pre-的“MIPS-指令集及汇编语言”一节中给出的测试样例，评价其强度（可从各个指令的覆盖情况，单一指令各种行为的覆盖情况等方面分析），并指出具体的不足之处。" class="headerlink" title="5.阅读 Pre 的“MIPS 指令集及汇编语言”一节中给出的测试样例，评价其强度（可从各个指令的覆盖情况，单一指令各种行为的覆盖情况等方面分析），并指出具体的不足之处。"></a>5.<em>阅读 Pre 的“MIPS 指令集及汇编语言”一节中给出的测试样例，评价其强度（可从各个指令的覆盖情况，单一指令各种行为的覆盖情况等方面分析），并指出具体的不足之处。</em></h3><ul>
+<li><p>完整测试样例：</p>
+<pre><code class="python:">ori $a0, $0, 123
+ori $a1, $a0, 456
+lui $a2, 123            # 符号位为 0
+lui $a3, 0xffff         # 符号位为 1
+ori $a3, $a3, 0xffff    # $a3 = -1
+add $s0, $a0, $a2      # 正正
+add $s1, $a0, $a3      # 正负
+add $s2, $a3, $a3      # 负负
+ori $t0, $0, 0x0000
+sw $a0, 0($t0)
+sw $a1, 4($t0)
+sw $a2, 8($t0)
+sw $a3, 12($t0)
+sw $s0, 16($t0)
+sw $s1, 20($t0)
+sw $s2, 24($t0)
+lw $a0, 0($t0)
+lw $a1, 12($t0)
+sw $a0, 28($t0)
+sw $a1, 32($t0)
+ori $a0, $0, 1
+ori $a1, $0, 2
+ori $a2, $0, 1
+beq $a0, $a1, loop1     # 不相等
+beq $a0, $a2, loop2     # 相等
+loop1:sw $a0, 36($t0)
+loop2:sw $a1, 40($t0)
+</code></pre>
+</li>
+<li><p>覆盖程度：</p>
+<table>
+<thead>
+<tr>
+<th>指令类型</th>
+<th>是否覆盖</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>算术&#x2F;逻辑类（R型）</strong></td>
+<td>覆盖 <code>add</code></td>
+<td>但未测试 <code>sub</code>, <code>and</code>, <code>or</code>, <code>slt</code> 等常见R型指令</td>
+</tr>
+<tr>
+<td><strong>立即数类（I型）</strong></td>
+<td>覆盖 <code>ori</code>, <code>lui</code></td>
+<td>但未覆盖 <code>addi</code>, <code>andi</code>, <code>ori</code> 的负数情况、溢出情况</td>
+</tr>
+<tr>
+<td><strong>存取类（I型）</strong></td>
+<td>覆盖 <code>lw</code>, <code>sw</code></td>
+<td>未测试未对齐访问、地址边界、不同偏移情况</td>
+</tr>
+<tr>
+<td><strong>分支跳转类（I型&#x2F;J型）</strong></td>
+<td>仅覆盖 <code>beq</code></td>
+<td>未测试 <code>bne</code>, <code>j</code>, <code>jal</code>, <code>jr</code> 等控制流指令</td>
+</tr>
+<tr>
+<td><strong>移位类（R型）</strong></td>
+<td>未覆盖</td>
+<td>没有 <code>sll</code>, <code>srl</code>, <code>sra</code></td>
+</tr>
+<tr>
+<td><strong>比较&#x2F;条件类</strong></td>
+<td>未覆盖</td>
+<td>未测试 <code>slt</code>, <code>slti</code></td>
+</tr>
+<tr>
+<td><strong>其他</strong></td>
+<td>未测试系统调用、异常、nop 等</td>
+<td></td>
+</tr>
+</tbody></table>
+</li>
+<li><p>覆盖情况：</p>
+<table>
+<thead>
+<tr>
+<th>指令</th>
+<th>测试行为</th>
+<th>是否充分</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>add</code></td>
+<td>正+正、正+负、负+负</td>
+<td>较全面覆盖三种符号组合</td>
+</tr>
+<tr>
+<td><code>ori</code></td>
+<td>零+立即数、寄存器+立即数</td>
+<td>未测试高位立即数、符号位为1的立即数</td>
+</tr>
+<tr>
+<td><code>lui</code></td>
+<td>正立即数、全1立即数</td>
+<td>有符号&#x2F;无符号情况都有</td>
+</tr>
+<tr>
+<td><code>lw</code> &#x2F; <code>sw</code></td>
+<td>连续地址、偏移量小</td>
+<td>未测试不同对齐或负偏移地址</td>
+</tr>
+<tr>
+<td><code>beq</code></td>
+<td>相等、不相等</td>
+<td>两种分支行为均测试</td>
+</tr>
+<tr>
+<td>PC更新</td>
+<td>分支&#x2F;顺序执行</td>
+<td>测试了跳转与顺序两种路径</td>
+</tr>
+</tbody></table>
+</li>
+<li><p>不足之处：没有考虑大部分的逻辑、跳转、移位和边界类指令，也未测试异常与溢出的情况。</p>
+</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2025/11/02/%E5%8D%95%E5%91%A8%E6%9C%9FCPU%E7%9A%84%E6%90%AD%E5%BB%BA/" data-id="cmhhfusgv0000ekmh475u0yhk" data-title="单周期CPU的搭建" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2025/11/02/hello-world/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Hello World</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2025/11/02/%E5%8D%95%E5%91%A8%E6%9C%9FCPU%E7%9A%84%E6%90%AD%E5%BB%BA/">单周期CPU的搭建</a>
+          </li>
+        
+          <li>
+            <a href="/2025/11/02/hello-world/">Hello World</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2025 John Doe<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>
